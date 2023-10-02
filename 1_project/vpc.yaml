@@ -1,0 +1,405 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC Stack Generator CLI
+Resources:
+  EIP0:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-eip-a
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::EIP
+  EIP1:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-eip-b
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::EIP
+  EIP2:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-eip-c
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::EIP
+  FlowLogIamRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: vpc-flow-logs.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            Effect: Allow
+            Resource: '*'
+          Version: '2012-10-17'
+        PolicyName: flow-logs-policy
+      RoleName: skills-vpc-flow-logs-role
+      Tags:
+      - Key: Name
+        Value: skills-vpc-flow-logs-role
+      - Key: project
+        Value: skills
+    Type: AWS::IAM::Role
+  FlowLogs:
+    Properties:
+      DeliverLogsPermissionArn:
+        Fn::GetAtt: FlowLogIamRole.Arn
+      LogGroupName: /aws/vpc/skills-vpc
+      ResourceId:
+        Ref: VPC
+      ResourceType: VPC
+      Tags:
+      - Key: project
+        Value: skills
+      TrafficType: ALL
+    Type: AWS::EC2::FlowLog
+  IGW:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-igw
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::InternetGateway
+  IGWAttachmentVPC:
+    Properties:
+      InternetGatewayId:
+        Ref: IGW
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::VPCGatewayAttachment
+  NAT0:
+    DependsOn: PublicRouteTableRouteIGW
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP0
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet0
+      Tags:
+      - Key: Name
+        Value: skills-nat-a
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::NatGateway
+  NAT1:
+    DependsOn: PublicRouteTableRouteIGW
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP1
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: skills-nat-b
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::NatGateway
+  NAT2:
+    DependsOn: PublicRouteTableRouteIGW
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP2
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet2
+      Tags:
+      - Key: Name
+        Value: skills-nat-c
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::NatGateway
+  PrivateRouteTable0:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-private-a-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PrivateRouteTable0RouteNAT0:
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NAT0
+      RouteTableId:
+        Ref: PrivateRouteTable0
+    Type: AWS::EC2::Route
+  PrivateRouteTable1:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-private-b-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PrivateRouteTable1RouteNAT1:
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NAT1
+      RouteTableId:
+        Ref: PrivateRouteTable1
+    Type: AWS::EC2::Route
+  PrivateRouteTable2:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-private-c-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PrivateRouteTable2RouteNAT2:
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NAT2
+      RouteTableId:
+        Ref: PrivateRouteTable2
+    Type: AWS::EC2::Route
+  PrivateSubnet0:
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-private-a
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PrivateSubnet0RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable0
+      SubnetId:
+        Ref: PrivateSubnet0
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PrivateSubnet1:
+    Properties:
+      AvailabilityZone: ap-northeast-2b
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-private-b
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PrivateSubnet1RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      SubnetId:
+        Ref: PrivateSubnet1
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PrivateSubnet2:
+    Properties:
+      AvailabilityZone: ap-northeast-2c
+      CidrBlock: 10.0.5.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-private-c
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PrivateSubnet2RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      SubnetId:
+        Ref: PrivateSubnet2
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  ProtectRouteTable:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-data-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  ProtectedSubnet0:
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      CidrBlock: 10.0.6.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-data-a
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  ProtectedSubnet0RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: ProtectRouteTable
+      SubnetId:
+        Ref: ProtectedSubnet0
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  ProtectedSubnet1:
+    Properties:
+      AvailabilityZone: ap-northeast-2b
+      CidrBlock: 10.0.7.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-data-b
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  ProtectedSubnet1RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: ProtectRouteTable
+      SubnetId:
+        Ref: ProtectedSubnet1
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  ProtectedSubnet2:
+    Properties:
+      AvailabilityZone: ap-northeast-2c
+      CidrBlock: 10.0.8.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-data-c
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  ProtectedSubnet2RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: ProtectRouteTable
+      SubnetId:
+        Ref: ProtectedSubnet2
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PublicRouteTable:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-public-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PublicRouteTableRouteIGW:
+    DependsOn: IGWAttachmentVPC
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: IGW
+      RouteTableId:
+        Ref: PublicRouteTable
+    Type: AWS::EC2::Route
+  PublicSubnet0:
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: skills-public-a
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PublicSubnet0RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet0
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PublicSubnet1:
+    Properties:
+      AvailabilityZone: ap-northeast-2b
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: skills-public-b
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PublicSubnet1RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet1
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PublicSubnet2:
+    Properties:
+      AvailabilityZone: ap-northeast-2c
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: skills-public-c
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PublicSubnet2RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet2
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  VPC:
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: skills-vpc
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::VPC
