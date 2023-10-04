@@ -54,7 +54,7 @@ button:hover {
     <script>
         $(document).ready(function() {
     $.ajax({
-        url: '/users', // 여기에 실제 데이터 소스 URL을 입력하세요.
+        url: '/v1/users', // 여기에 실제 데이터 소스 URL을 입력하세요.
         method: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -75,7 +75,7 @@ button:hover {
 <body>
     <div class="container">
         <h2>Register New User</h2>
-        <form action="/registry" method="post">
+        <form action="/v1/registry" method="post">
             <input type="text" id="userName" name="userName" placeholder="Enter user name" required>
             <button type="submit">Register</button>
         </form>
