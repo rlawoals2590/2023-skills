@@ -1,4 +1,4 @@
-# 클라우드 컴퓨팅 전국기능경기대회 제 1과제 예제 코드
+# 클라우드 컴퓨팅 전국기능경기대회 제 1과제
 
 ## Architecture
 ![image](https://github.com/rlawoals2590/2023-skills/assets/66626696/efb8a8e2-beee-435f-8c79-d85928818997)
