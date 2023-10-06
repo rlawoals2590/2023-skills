@@ -1,19 +1,36 @@
+import urllib.parse
+import boto3
+
+print('Loading function')
+
+s3 = boto3.client('s3')
+
+
 def lambda_handler(event, context):
-    # CloudFront 요청 객체 가져오기
-    request = event['Records'][0]['cf']['request']
+    #print("Received event: " + json.dumps(event, indent=2))
 
-    # 쿼리 스트링 가져오기
-    query_string = request.get('querystring', '')
+    # Get the object from the event and show its content type
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    print('Bucket--->' + bucket)
+    print('Key------>' + key)
     
-    # 각 파라미터를 분리하여 딕셔너리 형태로 변환
-    parameters = {}
-    for param in query_string.split('&'):
-        key, value = param.split('=')
-        parameters[key] = value
-
-    print(parameters)  # 쿼리 스트링 파라미터 출력
-
-    # 필요한 경우 여기에서 추가 로직 수행...
-
-    # 요청을 그대로 반환하거나 수정하여 반환
-    return request
+    position = key.index('/')
+    
+    table_name = key[0:int(position)]
+    athena_client = boto3.client('athena')
+    
+    sql = 'MSCK REPAIR TABLE skills_db.' + table_name
+    queryContext = {'Database': 'skills_db'}
+    resultConfig = {
+        'OutputLocation': 's3://' + bucket + '/output/'
+    }
+    
+    try:
+        athena_client.start_query_execution(QueryString=sql, QueryExecutionContext=queryContext, ResultConfiguration=resultConfig)
+        
+        return 'success'
+    except Exception as e:
+        print(e)
+        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
+        raise e

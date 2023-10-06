@@ -1,36 +1,37 @@
-import urllib.parse
-import boto3
+import base64
+import json
+import time
+from datetime import datetime
 
 print('Loading function')
 
-s3 = boto3.client('s3')
-
 
 def lambda_handler(event, context):
-    #print("Received event: " + json.dumps(event, indent=2))
+    output = []
 
-    # Get the object from the event and show its content type
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-    print('Bucket--->' + bucket)
-    print('Key------>' + key)
-    
-    position = key.index('/')
-    
-    table_name = key[0:int(position)]
-    athena_client = boto3.client('athena')
-    
-    sql = 'MSCK REPAIR TABLE skills_db.' + table_name
-    queryContext = {'Database': 'skills_db'}
-    resultConfig = {
-        'OutputLocation': 's3://' + bucket + '/output/'
-    }
-    
-    try:
-        athena_client.start_query_execution(QueryString=sql, QueryExecutionContext=queryContext, ResultConfiguration=resultConfig)
+    for record in event['records']:
+        print(record['recordId'])
+        payload = base64.b64decode(record['data']).decode('utf-8')
+        data_item = json.loads(payload)
         
-        return 'success'
-    except Exception as e:
-        print(e)
-        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
-        raise e
+        timestamp = data_item['time']
+        data_item['time'] = str(datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ'))
+        epoch_timestamp = int(datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ').timestamp())
+        data_item['epoch_time'] = epoch_timestamp
+        data_item['code'] = int(data_item['code'])
+        data_item['mirco'] = float(data_item['mirco'])
+        new_payload = json.dumps(data_item)
+        print(new_payload)
+
+        # Do custom processing on the payload here
+
+        output_record = {
+            'recordId': record['recordId'],
+            'result': 'Ok',
+            'data': base64.b64encode(new_payload.encode('utf-8')).decode('utf-8')
+        }
+        output.append(output_record)
+
+    print('Successfully processed {} records.'.format(len(event['records'])))
+
+    return {'records': output}
