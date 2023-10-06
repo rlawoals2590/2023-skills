@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Results</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<table id="resultsTable">
+    <thead></thead>
+    <tbody></tbody>
+</table>
+
+<script>
+    $(document).ready(function() {
+        // Get the data parameter from the query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+
+        // Make an AJAX request using the data parameter
+        $.get(`https://d3o2adczqtdxrw.cloudfront.net/select?level=INFO&year=2023&month=10&day=6&hour=12`, function(data) {
+            // Assuming the data is an array of objects
+
+            // Display headers
+            const headers = Object.keys(data[0]);
+            let headerRow = "<tr>";
+            headers.forEach(header => {
+                headerRow += `<th>${header}</th>`;
+            });
+            headerRow += "</tr>";
+            $('#resultsTable thead').append(headerRow);
+
+            // Display rows
+            data.forEach(row => {
+                let rowHtml = "<tr>";
+                headers.forEach(header => {
+                    rowHtml += `<td>${row[header]}</td>`;
+                });
+                rowHtml += "</tr>";
+                $('#resultsTable tbody').append(rowHtml);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

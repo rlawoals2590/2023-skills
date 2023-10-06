@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC Stack Generator CLI 
+Resources:
+  EIP0:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-eip-a
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::EIP
+  FlowLogIamRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: vpc-flow-logs.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            Effect: Allow
+            Resource: '*'
+          Version: '2012-10-17'
+        PolicyName: flow-logs-policy
+      RoleName: skills-vpc-flow-logs-role
+      Tags:
+      - Key: Name
+        Value: skills-vpc-flow-logs-role
+      - Key: project
+        Value: skills
+    Type: AWS::IAM::Role
+  FlowLogs:
+    Properties:
+      DeliverLogsPermissionArn:
+        Fn::GetAtt: FlowLogIamRole.Arn
+      LogGroupName: /aws/vpc/skills-vpc
+      ResourceId:
+        Ref: VPC
+      ResourceType: VPC
+      Tags:
+      - Key: project
+        Value: skills
+      TrafficType: ALL
+    Type: AWS::EC2::FlowLog
+  IGW:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-igw
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::InternetGateway
+  IGWAttachmentVPC:
+    Properties:
+      InternetGatewayId:
+        Ref: IGW
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::VPCGatewayAttachment
+  NAT0:
+    DependsOn: PublicRouteTableRouteIGW
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP0
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet0
+      Tags:
+      - Key: Name
+        Value: skills-nat-a
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::NatGateway
+  PrivateRouteTable0:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-private-a-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PrivateRouteTable0RouteNAT0:
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NAT0
+      RouteTableId:
+        Ref: PrivateRouteTable0
+    Type: AWS::EC2::Route
+  PrivateSubnet0:
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: skills-private-a
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PrivateSubnet0RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable0
+      SubnetId:
+        Ref: PrivateSubnet0
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  PublicRouteTable:
+    Properties:
+      Tags:
+      - Key: Name
+        Value: skills-public-rt
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::RouteTable
+  PublicRouteTableRouteIGW:
+    DependsOn: IGWAttachmentVPC
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: IGW
+      RouteTableId:
+        Ref: PublicRouteTable
+    Type: AWS::EC2::Route
+  PublicSubnet0:
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: skills-public-a
+      - Key: project
+        Value: skills
+      VpcId:
+        Ref: VPC
+    Type: AWS::EC2::Subnet
+  PublicSubnet0RouteTableAssociation:
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet0
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  VPC:
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: skills-vpc
+      - Key: project
+        Value: skills
+    Type: AWS::EC2::VPC
