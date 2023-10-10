@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create a VPC, Subnets, Security Group, and an EC2 Instance with Nginx
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Fn::Ref: MyVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: MySubnet
+
+  MyKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: MyKeyPair
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH and HTTP access
+      VpcId:
+        Fn::Ref: MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      SecurityGroups:
+        - Fn::Ref: MySecurityGroup
+      SubnetId:
+        Fn::Ref: MySubnet
+      KeyName: !Ref MyKeyPair
+      ImageId: ami-0c55b159cbfafe1f0  # Amazon Linux 2 AMI
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config
+          sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          systemctl restart sshd
+
+          yum -y update
+          yum -y install nginx
+          systemctl start nginx
+          systemctl enable nginx
+          echo "ap-northeast-2c?" > /usr/share/nginx/html/index.html

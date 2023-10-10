@@ -1,0 +1,26 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "S3",
+			"Effect": "Allow",
+			"Action": [
+				"s3:GetObjectAcl",
+				"s3:GetObject",
+				"s3:ListBucket",
+				"s3:GetObjectVersion"
+			],
+			"Resource": "*"
+		},
+        {
+            "Sid": "Cloudformation",
+			"Effect": "Allow",
+			"Action": [
+				"cloudformation:UpdateStack",
+				"cloudformation:CreateChangeSet",
+				"cloudformation:CreateStackSet"
+			],
+			"Resource": "*"
+        }
+	]
+}
