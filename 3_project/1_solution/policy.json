@@ -5,10 +5,11 @@
 			"Sid": "S3",
 			"Effect": "Allow",
 			"Action": [
-				"s3:GetObjectAcl",
+				"s3:PutObject",
 				"s3:GetObject",
-				"s3:ListBucket",
-				"s3:GetObjectVersion"
+				"s3:PutBucketPublicAccessBlock",
+				"s3:PutBucketPolicy",
+				"s3:CreateBucket"
 			],
 			"Resource": "*"
 		},
@@ -16,9 +17,9 @@
             "Sid": "Cloudformation",
 			"Effect": "Allow",
 			"Action": [
-				"cloudformation:UpdateStack",
 				"cloudformation:CreateChangeSet",
-				"cloudformation:CreateStackSet"
+				"cloudformation:CreateStackSet",
+				"cloudformation:DescribeStacks"
 			],
 			"Resource": "*"
         }
