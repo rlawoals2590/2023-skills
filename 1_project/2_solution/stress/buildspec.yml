@@ -11,7 +11,6 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - cd stress/
       - docker build -t skills-stress-ecr .
       - docker tag skills-stress-ecr:latest 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com/skills-stress-ecr:$IMAGE_TAG
   post_build:
@@ -23,5 +22,5 @@ phases:
       - cat taskdef.json
 artifacts:
   files: 
-    - stress/taskdef.json
-    - stress/appspec.yml
+    - taskdef.json
+    - appspec.yml
