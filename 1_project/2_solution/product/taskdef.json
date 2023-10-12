@@ -44,8 +44,8 @@
             "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
-            "startTimeout": 60,
-            "stopTimeout": 60,
+            "startTimeout": 40,
+            "stopTimeout": 70,
             "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
