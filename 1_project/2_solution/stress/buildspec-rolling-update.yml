@@ -1,0 +1,25 @@
+
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+      - IMAGE_TAG=$(date +%Y-%d-%m.%H.%M.%S)
+      - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t skills-stress-ecr .
+      - docker tag skills-stress-ecr:latest 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com/skills-stress-ecr:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com/skills-stress-ecr:$IMAGE_TAG
+      - printf '[{"name":"stress","imageUri":"%s"}]' 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com/skills-stress-ecr:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files:
+    - imagedefinitions.json
