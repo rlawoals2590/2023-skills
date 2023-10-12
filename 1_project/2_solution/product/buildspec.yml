@@ -11,7 +11,6 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - cd product/
       - docker build -t skills-product-ecr .
       - docker tag skills-product-ecr:latest 082334196434.dkr.ecr.ap-northeast-2.amazonaws.com/skills-product-ecr:$IMAGE_TAG
   post_build:
@@ -23,5 +22,5 @@ phases:
       - cat taskdef.json
 artifacts:
   files: 
-    - product/taskdef.json
-    - product/appspec.yml
+    - taskdef.json
+    - appspec.yml
